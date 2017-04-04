@@ -120,31 +120,50 @@ void initPolicies(vector<policy>* population, vector<city>* allCities){
 };
 
 vector<city> policy::mutatePolicy(vector<city> mutatePolicy){
-    vector<city> mutate;
+    
+    vector<city> mutate = mutatePolicy;
     int numChanges = numCities * .1;
+    
     for(int i = 0; i<numChanges; i++)
     {
-    
+        vector<city> hold;
+        city B;
+        B.initCity();
+        hold.push_back(B);
+        
+        int pullLocation1 = rand()% numCities;
+        int pullLocation2 = rand()% numCities;
+        
+        while(pullLocation1 == 0 || pullLocation2 == 0 || pullLocation1 == pullLocation2)
+        {
+            pullLocation1 = rand()% numCities;
+            pullLocation2 = rand()% numCities;
+        }
+        
+        hold[0]=mutate.at(pullLocation1);
+        
+        mutate.at(pullLocation1) = mutate.at(pullLocation2);
+        mutate.at(pullLocation2) = hold[0];
+        hold.clear();
     }
-
+    assert(mutate.size()==numCities);
     return mutate;
 };
 
 vector<policy> replicatePop(vector<policy>* population){
+    
     // take in current population
     vector<policy> mutatePop = *population;
     assert(mutatePop.size() == populationSize);
     
+    // replicate and mutate
     for(int i =0; i<populationSize; i++)
     {
-        vector<city> mutatePolicy = population->at(i).cityOrder;
         policy B;
-        B.initPolicy(mutatePolicy);
-        
-        
+        vector<city> mutate = B.mutatePolicy(population->at(i).cityOrder);
+        B.initPolicy(mutate);
         mutatePop.push_back(B);
     }
-    
     
     cout<<"Mutated pop size: "<<mutatePop.size()<<endl;
     assert(mutatePop.size() == populationSize * 2);
@@ -174,7 +193,7 @@ int main() {
     
         // Downselect -> Binary tournament
         
-        
+    
     }
     
 }
