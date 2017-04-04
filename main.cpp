@@ -80,7 +80,14 @@ double policy::evalFitness(vector<city> cityOrder){
         distance = distance + sqrt((xDistance*xDistance)+(yDistance*yDistance));
     }
     
+    // Assert that distance was calculated                                                              // Both LR 7 & LR 8
+    assert(distance != 0);
+    
+    
     fitness = distance;
+    
+    // MR 2 - fitness is based on distance traveled                                                        // MR 2
+    assert(fitness == distance);
     return fitness;
 };
 
@@ -112,10 +119,35 @@ void initPolicies(vector<policy>* population, vector<city>* allCities){
             policyChange.at(pullLocation1) = policyChange.at(pullLocation2);
             policyChange.at(pullLocation2) = hold[0];
         }
+        
+        // LR 6 - Doesnt visit same city twice                                                                      // LR 6
+        for(int i =0; i<policyChange.size(); i++)
+        {
+            for(int j = 0; j<policyChange.size(); j++)
+            {
+                if(i != j){
+                    assert(policyChange.at(i).cityLocX != policyChange.at(j).cityLocX);
+                }
+            }
+        }
+        
         policy A;
         A.initPolicy(policyChange);
+        
+        // MR 3 all policies have a fitness                                                                         // MR 3
+        assert(A.fitness > 10);
         population->push_back(A);
     }
+    
+
+    
+    // LR 5 - Start in same city                                                                                       // LR 5
+    for(int i = 0; i<populationSize-1; i++)
+    {
+        assert(population->at(i).cityOrder.at(0).cityLocX == population->at(i+1).cityOrder.at(0).cityLocX);
+    }
+    
+    // MR 1 - population is filled with policies and the size is greater than 1 (equals the desired size)              // MR 1
     assert(population->size() == populationSize);
 };
 
@@ -149,6 +181,17 @@ vector<city> policy::mutatePolicy(vector<city> mutatePolicy){
         mutate.at(pullLocation2) = hold[0];
         hold.clear();
     }
+    
+    //Test that slight mutation occured                                                                           // LR 4
+    int repeat=0;
+    for(int i= 0; i<numCities; i++){
+        if(mutate.at(i).cityLocX == mutatePolicy.at(i).cityLocX){
+            repeat++;
+        }
+    
+    }
+    
+    assert(repeat<numCities);
     assert(mutate.size()==numCities);
     return mutate;
 };
@@ -170,6 +213,7 @@ vector<policy> replicatePop(vector<policy>* population){
         mutatePop.push_back(B);
     }
     
+    // MR 5 - Can return to carrying capacity (Mutated population doubles back to 200)                         // MR 5
     assert(mutatePop.size() == populationSize * 2);
     return mutatePop;
 };
@@ -198,11 +242,13 @@ vector<policy> downSelect(vector<policy>* mutatedPopulation){
             population.push_back(mutatedPopulation->at(pullLocation2));
         }
     }
-    assert(population.size()== populationSize);
+    
+    // MR 4 - Downselect cuts parent population in half - Downselection                                           // MR 4
+    assert(population.size() == mutatedPopulation->size()/2);
     return population;
 };
 
-void printInfo(vector<policy> population, vector<double>* averages){
+void printInfo(vector<policy> population, vector<double>* averages, vector<double>* minimum, vector<double>* maximum){
     
     double average = 0.0;
     double min = 10000;
@@ -224,6 +270,19 @@ void printInfo(vector<policy> population, vector<double>* averages){
     average = average/100;
     cout<<"AVERAGE: "<<average<<" MIN: "<<min<<" MAX: "<<max<<" Min repeat: "<<minRepeat<<endl;
     averages->push_back(average);
+    minimum->push_back(min);
+    maximum->push_back(max);
+};
+
+void writeToFile(vector<double>* averages, vector<double>* minimum, vector<double>* maximum){
+
+    ofstream allValueEA;
+    allValueEA.open("EvoAlgValues");
+    for(int i =0; i<numMutations; i++)
+    {
+    allValueEA << averages->at(i) << "\t" << minimum->at(i) << "\t" << maximum->at(i) << "\n";
+    }
+    allValueEA.close();
 };
 
 
@@ -234,6 +293,8 @@ int main() {
     vector<city> allCities;
     vector<policy> mutatedPopulation;
     vector<double> averages;
+    vector<double> maximum;
+    vector<double> minimum;
     
     // Initialize cities
     initCities(&allCities);
@@ -242,7 +303,7 @@ int main() {
     initPolicies(&population, &allCities);
     
     cout<<"Original Fitnesses: "<<endl;
-    printInfo(population, &averages);
+    printInfo(population, &averages, &minimum, &maximum);
     
     // Start EA (for)
     for(int i = 0; i< numMutations; i++)
@@ -254,8 +315,20 @@ int main() {
         population.clear();
         population = downSelect(&mutatedPopulation);
         cout<<endl;
-        printInfo(population, &averages);
+        printInfo(population, &averages, &minimum, &maximum);
     }
     cout<<endl<<" - - - - - - - - - - - - - - - - - - - - - - - - "<<endl<<"Final Fitnesses: "<<endl;
-    printInfo(population, &averages);
+    printInfo(population, &averages, &minimum, &maximum);
+    writeToFile( &averages, &minimum, &maximum );
+    
+    
+    //cout<<"THAT GOOD GOOD: "<<averages.at(0)/averages.at(averages.size()-1)<<endl;
+    
+    // HR 1 - Assert that final average is at least 15 percent smaller than original                              // HR 1
+    assert(averages.at(0)/averages.at(averages.size()-1) > 1.15);
+    
+    
+    //HR 2 3 4 will be determined during write up by user input of 10 25 and 100 cities
 }
+
+
