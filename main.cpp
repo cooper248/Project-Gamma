@@ -158,12 +158,14 @@ vector<policy> replicatePop(vector<policy>* population){
     // take in current population
     vector<policy> mutatePop = *population;
     assert(mutatePop.size() == populationSize);
+    int pullLocation;
     
     // replicate and mutate
     for(int i =0; i<populationSize; i++)
     {
         policy B;
-        vector<city> mutate = B.mutatePolicy(population->at(i).cityOrder);
+        pullLocation = rand()% mutatePop.size();
+        vector<city> mutate = B.mutatePolicy(mutatePop.at(pullLocation).cityOrder);
         B.initPolicy(mutate);
         mutatePop.push_back(B);
     }
@@ -200,60 +202,14 @@ vector<policy> downSelect(vector<policy>* mutatedPopulation){
     return population;
 };
 
-
-int main() {
-    srand(time(NULL));
-    
-    vector<policy> population;
-    vector<city> allCities;
-    vector<policy> mutatedPopulation;
-    
-    // Initialize cities
-    initCities(&allCities);
-
-    // Initialize policies
-    initPolicies(&population, &allCities);
-    
+void printInfo(vector<policy> population, vector<double>* averages){
     
     double average = 0.0;
     double min = 10000;
     double max = 0;
     int minRepeat = 0;
-    cout<<"Original Fitnesses: "<<endl;
     for(int i=0; i<populationSize; i++){
-        cout<<"Policy Fitness: "<<population.at(i).fitness<<endl;
-        average = average + population.at(i).fitness;
-        if(population.at(i).fitness<min){
-            min = population.at(i).fitness;
-        }
-        if(population.at(i).fitness>max){
-           max = population.at(i).fitness;
-        }
-        if(population.at(i).fitness==min){
-            minRepeat++;
-        }
-    }
-    cout<<"AVERAGE: "<<average/100<<" MIN: "<<min<<" MAX: "<<max<<" Min repeat: "<<minRepeat<<endl;
-    
-    
-    // Start EA (for)
-    for(int i = 0; i< numMutations; i++)
-    {
-        // Replicate -> Mutate
-        mutatedPopulation = replicatePop(&population);
-    
-        // Downselect -> Binary tournament
-        population.clear();
-        population = downSelect(&mutatedPopulation);
-    }
-    
-    average = 0;
-    min = 10000;
-    max=0;
-    minRepeat = 0;
-    cout<<endl<<" - - - - - - - - - - - - - - - - - - - - - - - - "<<endl<<"Final Fitnesses: "<<endl;
-    for(int i=0; i<populationSize; i++){
-        cout<<"Policy Fitness: "<<population.at(i).fitness<<endl;
+        //cout<<"Policy Fitness: "<<population.at(i).fitness<<endl;
         average = average + population.at(i).fitness;
         if(population.at(i).fitness<min){
             min = population.at(i).fitness;
@@ -265,14 +221,41 @@ int main() {
             minRepeat++;
         }
     }
-    cout<<" AVERAGE: "<<average/100<<endl<<" MIN: "<<min<<endl<<" MAX: "<<max<<endl<<" Min repeat: "<<minRepeat<<endl;
+    average = average/100;
+    cout<<"AVERAGE: "<<average<<" MIN: "<<min<<" MAX: "<<max<<" Min repeat: "<<minRepeat<<endl;
+    averages->push_back(average);
+};
+
+
+int main() {
+    srand(time(NULL));
     
+    vector<policy> population;
+    vector<city> allCities;
+    vector<policy> mutatedPopulation;
+    vector<double> averages;
+    
+    // Initialize cities
+    initCities(&allCities);
+
+    // Initialize policies
+    initPolicies(&population, &allCities);
+    
+    cout<<"Original Fitnesses: "<<endl;
+    printInfo(population, &averages);
+    
+    // Start EA (for)
+    for(int i = 0; i< numMutations; i++)
+    {
+        // Replicate -> Mutate
+        mutatedPopulation = replicatePop(&population);
+    
+        // Downselect -> Binary tournament
+        population.clear();
+        population = downSelect(&mutatedPopulation);
+        cout<<endl;
+        printInfo(population, &averages);
+    }
+    cout<<endl<<" - - - - - - - - - - - - - - - - - - - - - - - - "<<endl<<"Final Fitnesses: "<<endl;
+    printInfo(population, &averages);
 }
-
-
-
-
-
-
-
-
